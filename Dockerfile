@@ -1,38 +1,40 @@
-# 1. Use the distroless uv image to get uv & uvx binaries
-FROM ghcr.io/astral-sh/uv:debian-slim AS uv-binaries
+FROM python:3.13-slim
 
-# Install system deps
+# Install system dependencies and uv as root
 RUN apt-get update && \
     apt-get install -y curl && \
-    rm -rf /var/lib/apt/lists/*
+    curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    mv /root/.local/bin/uv /usr/local/bin/ && \
+    mv /root/.local/bin/uvx /usr/local/bin/ && \
+    mkdir -p /.cache/uv
 
-# Copy uv & uvx into PATH
-COPY --from=uv-binaries /uv /uvx /usr/local/bin/  
-# Create a non-root user
-RUN useradd -m -u 1000 user
+# Copy project configuration first
+COPY pyproject.toml .
+
+# Install Python packages as root using uv sync
+RUN uv sync && \
+    rm -rf /.uv
+
+# Create and switch to non-root user
+RUN useradd -m -u 1000 user && \
+    chown -R user:user /.cache/uv
+
 USER user
 
 # Set up environment
 ENV HOME=/home/user \
-    PATH=/home/user/.local/bin:/usr/local/bin:/app/.venv/bin:$PATH \
+    PATH=/home/user/.local/bin:/usr/local/bin:$PATH \
     PORT=7860 \
     CHAINLIT_HOST=0.0.0.0 \
     PYTHONUNBUFFERED=1
 
-WORKDIR /app
+WORKDIR $HOME/app
 
-# Copy in only pyproject and lock first (for caching)
-COPY --chown=user:user pyproject.toml uv.lock ./
-
-# Install Python dependencies reproducibly
-RUN uv sync --locked --no-cache && \
-    rm -rf /root/.cache/uv                             
-
-# Copy the rest of your application
+# Copy application files with correct ownership
 COPY --chown=user:user . .
 
-# Expose the port that Chainlit uses
+# Expose the port
 EXPOSE 7860
 
-# Launch Chainlit via the uv-managed environment
-CMD ["chainlit", "run", "main.py", "--host", "0.0.0.0", "--port", "7860"]
+# Run the application using uv run
+CMD ["chainlit", "run", "ui/app.py", "--host", "0.0.0.0", "--port", "7860"]
