@@ -162,12 +162,11 @@ talking_agent = Agent(
     tools=[qdrant_search]
 )
 
-async def main():
-    print("Hello from openai-agentsdk-rag!")
-    res = await Runner.run(talking_agent, input="how to  scale 10m users")
+async def main(query: str | list[dict[str, str]]):
+    res = await Runner.run(talking_agent, input=query)
     print(f"Response: {res.final_output}")
-    
-
+    return res.final_output 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    input_text = input("Enter your query: ")
+    asyncio.run(main(input_text))
