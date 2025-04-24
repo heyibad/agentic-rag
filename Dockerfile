@@ -6,19 +6,15 @@ RUN apt-get update && \
     curl -LsSf https://astral.sh/uv/install.sh | sh && \
     mv /root/.local/bin/uv /usr/local/bin/ && \
     mv /root/.local/bin/uvx /usr/local/bin/ && \
-    mkdir -p /.cache/uv
+    mkdir -p /.cache/uv && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy project configuration first
-COPY pyproject.toml .
-
-# Install Python packages as root using uv sync
-RUN uv sync && \
-    rm -rf /.uv
-
-# Create and switch to non-root user
+# Create non-root user
 RUN useradd -m -u 1000 user && \
     chown -R user:user /.cache/uv
 
+# Switch to non-root user
 USER user
 
 # Set up environment
@@ -28,13 +24,17 @@ ENV HOME=/home/user \
     CHAINLIT_HOST=0.0.0.0 \
     PYTHONUNBUFFERED=1
 
+# Set working directory
 WORKDIR $HOME/app
 
-# Copy application files with correct ownership
+# Copy all application files with correct ownership
 COPY --chown=user:user . .
+
+# Install dependencies as the non-root user
+RUN uv sync
 
 # Expose the port
 EXPOSE 7860
 
 # Run the application using uv run
-CMD ["chainlit", "run", "ui/app.py", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["uv", "run", "chainlit", "run", "ui/app.py", "--host", "0.0.0.0", "--port", "7860"]
