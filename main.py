@@ -36,7 +36,7 @@ CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", 160))
 
 
 # Debug output to verify environment variables
-# print(f"{gemini_api_key=}, {model_name=}, {base_url=}, {COLLECTION_NAME=}, {EMBED_MODEL=}, {CHUNK_SIZE=}, {CHUNK_OVERLAP=}")
+# print(f"{gemini_api_key=}, {model_name=}, {base_url=}, {COLLECTION_NAME=}, {EMBED_MODEL=}, {CHUNK_SIZE=}, {CHUNK_OVERLAP=}, {QDRANT_URL=}, {QDRANT_API_KEY=}")
 
 if not gemini_api_key or not model_name or not base_url:
     raise Exception("Gemini API key or credentials not found in .env file")
@@ -121,8 +121,6 @@ async def create_embeddings():
 # asyncio.run(create_collection())
 # asyncio.run(create_embeddings())
 
-
-
 @function_tool
 def qdrant_search(query:str,top_k:int=5):
     """  
@@ -149,8 +147,8 @@ def qdrant_search(query:str,top_k:int=5):
         limit=top_k
     )
     # Return the raw text of top hits
-    print(f"Query: {query}")
-    print(f"Results: {results}")
+    # print(f"Query: {query}")
+    # print(f"Results: {results}")
     return results
     
 
