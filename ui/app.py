@@ -13,7 +13,6 @@ async def start_chat():
     await cl.Message(
         content="Welcome to the  DACA Chatbot! How can I Guide you?").send()
     
-    
 @on_message
 async def handle_message(message:cl.Message):
     history = cl.user_session.get("history") or []
